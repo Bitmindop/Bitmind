@@ -79,6 +79,10 @@ void imprimir(){
   Serial.print(mediaSensor);
   Serial.println("cm");
 
+  Serial.print("angulo: ");
+  Serial.print(anguloX );
+  Serial.println("cm");
+
   Serial.println("---------------------------------------------");
    
  }
@@ -104,6 +108,7 @@ void setup() {
 
 void loop() {
 
+
   mpu6050.update();
 
   anguloX = mpu6050.getAngleX();
@@ -112,19 +117,27 @@ void loop() {
 
   cm1 = 0.01723 * dista1(triggerPin1, echoPin1);
 
-  
   cm2 = 0.01723 * dista2(triggerPin2, echoPin2);
     
-  
   cm3 = 0.01723 * dista3(triggerPin3, echoPin3);
-
   
   mediaSensor= (cm1+cm2+cm3)/3.0;
 
   
-  //imprimir();
+ // imprimir();
   
- 
+
+  //Serial.print("anguloX: ");
+ // Serial.print(anguloX );
+ // Serial.println("cm");
+  
+//  Serial.print("anguloY: ");
+ // Serial.print(anguloY );
+ // Serial.println("cm");
+
+  Serial.print("anguloY: ");
+  Serial.print(anguloY );
+  Serial.println("cm");
 
 if (mediaSensor >= 3 && mediaSensor <=100)
 { 
@@ -132,19 +145,20 @@ if (mediaSensor >= 3 && mediaSensor <=100)
   
   // OBJETOS A FRENTE / GIROSCOPIO EM TORNO DE 90 GRAUS
 
-  if (anguloX >= 60 && anguloX <=120 && mediaSensor <= 100 && mediaSensor >= 80) 
+  if (anguloZ >= 60 && anguloZ <=120 && mediaSensor <= 100 && mediaSensor >= 80 && anguloY >=60 && anguloY <= 120 ) 
+
   {
      analogWrite(pulseiraE,xI);
      analogWrite(pulseiraD,xI);
 
   }
-  else if (anguloX >= 60 && anguloX <= 120 && mediaSensor < 80 && mediaSensor > 40)
+  else if (anguloZ >= 60 && anguloZ <= 120 && mediaSensor < 80 && mediaSensor > 40 && anguloY >=60 && anguloY <= 120)
   {
     analogWrite(pulseiraE,xI);
     analogWrite(pulseiraD,xI);
 
   }
-  else if (anguloX >= 60 && anguloX <= 120 && mediaSensor <= 40)
+  else if (anguloZ >= 60 && anguloZ <= 120 && mediaSensor <= 40 && anguloY >=60 && anguloY <= 120)
   {
     analogWrite(pulseiraE,xI);
     analogWrite(pulseiraD,xI);
@@ -155,17 +169,17 @@ if (mediaSensor >= 3 && mediaSensor <=100)
 
   xI = map(mediaSensor,3,100,255,0);
 
-  if (anguloX > 120 && anguloX <= 180 && mediaSensor <= 100 && mediaSensor >= 80) 
+  if (anguloZ > 120 && anguloZ <= 180 && mediaSensor <= 100 && mediaSensor >= 80 && anguloY >=60 && anguloY <= 120 ) 
   {
     analogWrite(pulseiraE,xI);
 
   }
-  else if (anguloX > 120 && anguloX <= 180 && mediaSensor < 80 && mediaSensor > 40)
+  else if (anguloZ > 120 && anguloZ <= 180 && mediaSensor < 80 && mediaSensor > 40 && anguloY >=60 && anguloY <= 120)
   {
     analogWrite(pulseiraE,xI);
 
   }
-  else if (anguloX > 120 && anguloX <= 180 && mediaSensor <= 40)
+  else if (anguloZ > 120 && anguloZ <= 180 && mediaSensor <= 40 && anguloY >=60 && anguloY <= 120)
   {
     analogWrite(pulseiraE,xI);
 
@@ -175,17 +189,17 @@ if (mediaSensor >= 3 && mediaSensor <=100)
 
    xI = map(mediaSensor,3,100,255,0);
 
-   if (anguloX < 60 && anguloX >= 0 && mediaSensor <= 100 && mediaSensor >= 80) 
+   if (anguloZ < 60 && anguloZ >= 0 && mediaSensor <= 100 && mediaSensor >= 80 && anguloY >=60 && anguloY <= 120) 
   {
     analogWrite(pulseiraD,xI);
     
   }
-  else if (anguloX <60 && anguloX >= 0 && mediaSensor < 80 && mediaSensor > 40)
+  else if (anguloZ <60 && anguloZ >= 0 && mediaSensor < 80 && mediaSensor > 40 && anguloY >=60 && anguloY <= 120)
   {
     analogWrite(pulseiraD,xI);
 
   }
-  else if (anguloX < 60 && anguloX >= 0 && mediaSensor <= 40)
+  else if (anguloZ < 60 && anguloZ >= 0 && mediaSensor <= 40 && anguloY >=60 && anguloY <= 120)
   {
     analogWrite(pulseiraD,xI);
 
@@ -198,5 +212,5 @@ else {
   analogWrite(pulseiraE,0);
 
 }
-
+delay(2000);
 }
