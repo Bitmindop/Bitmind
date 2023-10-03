@@ -64,9 +64,17 @@ void imprimir(){
   Serial.print(mediaSensor);
   Serial.println("cm");
 
-  Serial.print("angulo: ");
+  Serial.print("anguloX: ");
   Serial.print(anguloX );
-  Serial.println("cm");
+  Serial.println("o");
+
+  Serial.print("anguloY: ");
+  Serial.print(anguloY );
+  Serial.println("o");
+
+  Serial.print("anguloZ: ");
+  Serial.print(anguloZ );
+  Serial.println("o");
 
   Serial.println("---------------------------------------------");
    
@@ -120,12 +128,8 @@ void loop() {
   mediaSensor= (cm1+cm2+cm3)/3.0;
 
   
- // imprimir();
+  imprimir();
   
-
-  Serial.print("anguloY: ");
-  Serial.print(anguloY );
-  Serial.println("cm");
 
 if (mediaSensor >= 3 && mediaSensor <=100)
 { 
@@ -200,5 +204,5 @@ else {
   analogWrite(pulseiraE,0);
 
 }
-delay(2000);
+//delay(500);
 }
