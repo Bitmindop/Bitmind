@@ -2,6 +2,9 @@
 //            -verificar qual o eixo da movimentação vertical do giroscopio;
 //            -verificar necessidades de atualizações constantes do uso do map e das leituras dos sensores.
 
+//========================//
+// Versão com arduino uno //
+//========================//
 
 #include <MPU6050_tockn.h>
 #include <Wire.h>
