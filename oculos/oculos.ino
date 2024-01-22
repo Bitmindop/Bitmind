@@ -2,17 +2,17 @@
 //            -verificar qual o eixo da movimentação vertical do giroscopio;
 //            -verificar necessidades de atualizações constantes do uso do map e das leituras dos sensores.
 
-//========================//
-// Versão com arduino uno //
-//========================//
+//=========================//
+// Versão com Arduino Nano //
+//=========================//
 
 #include <MPU6050_tockn.h>
 #include <Wire.h>
 // necessidade de incluir uma library para o ultrasonic
 
-#define pulseiraE 9
-#define pulseiraD 11
-#define ledAux 13 // ao piscar mostra que o arduino está funionando
+#define pulseiraE 7
+#define pulseiraD 8
+
 
 #define MPU6050_ADDR 0x68 // no arduino uno, ligar o pino A4(arduin) ao pino SDA do MPU e o A5(arduino) no SCL do MPU 
                           // o pino AD0 do MPU deve ficar ligado no GND para o endereço 0x68 
@@ -23,23 +23,32 @@ const float calDist = 0.01723; // calibração de distância
 
 MPU6050 mpu6050(Wire);
 
-int triggerPin1 = 5; // sensor 1
-int echoPin1 = 4;  // sensor 1
-int triggerPin2 = 2;  // sensor 2
-int echoPin2 = 3; // sensor 2
-int triggerPin3 = 7;  // sensor 3
-int echoPin3 = 6; // sensor 3
-float cm1 = 0;    // centimetro sensor 1
-float cm2 = 0;   // centimetro sensot 2
-float cm3 = 0;  // centimetro sensor 3 
-float mediaSensor; // media das distancias de todos os sensores
+int triggerPinE = 2; // sensor Esquerdo
+int echoPinE = 3;  // sensor Esquerdo
+int triggerPinD = 2;  // sensor Direito
+int echoPinD = 4; // sensor Direito
+
+int ledAux = 13; // ao piscar mostra que o arduino está funionando
+
+float DistE = 0;    // distnacia sensor Esquerdo
+float DistD = 0;   // distnacia sensor Direito
+
 int xI= 0;      // intensidade no atuadores, com base na media 
 float anguloX; // angulo em graus eixo x
 float anguloY; // angulo em graus eixo y
 float anguloZ; // angulo em graus eixo z
+bool LED;
 
-long dista(int triggerPin, int echoPin)
-{
+unsigned long Tled = millis();
+void pisca(){  // tempos menores que 2s não funcionam devido ao delay causado pelo mpu6050
+  int base = 2000; // pisca a cada 2 segundos
+  unsigned long dT = millis()- Tled;
+  LED = dT < base;
+  digitalWrite(ledAux, LED);
+  if(dT > 2*base){ Tled = millis();}
+}
+
+long distancia(int triggerPin, int echoPin){
   pinMode(triggerPin, OUTPUT); 
   digitalWrite(triggerPin, LOW);
   delayMicroseconds(2);
@@ -51,21 +60,13 @@ long dista(int triggerPin, int echoPin)
 }
 
 void imprimir(){
-   Serial.print("SENSOR 1: ");
-   Serial.print(cm1);
+   Serial.print("SENSOR Direito: ");
+   Serial.print(DistD);
    Serial.println("cm");
    
-   Serial.print("SENSOR 2: ");
-   Serial.print(cm2);
+   Serial.print("SENSOR Esquerdo: ");
+   Serial.print(DistE);
    Serial.println("cm");
-
-   Serial.print("SENSOR 3: ");
-   Serial.print(cm3);
-   Serial.println("cm");
-
-  Serial.print("Média sensores: ");
-  Serial.print(mediaSensor);
-  Serial.println("cm");
 
   Serial.print("anguloX: ");
   Serial.print(anguloX );
@@ -80,7 +81,8 @@ void imprimir(){
   Serial.println("o");
 
   Serial.println("---------------------------------------------");
-   
+  //LED = !LED;
+  //digitalWrite(ledAux, LED);
  }
 
  void vibra(){
@@ -98,6 +100,7 @@ void setup() {
   Serial.begin(9600);
   pinMode(pulseiraE,OUTPUT);
   pinMode(pulseiraD,OUTPUT);
+  pinMode(ledAux,OUTPUT);
 
   vibra();
   vibra();
@@ -110,11 +113,12 @@ void setup() {
   #ifdef DEBUG
     Serial.println("Fim Setup");
   #endif 
-
+  digitalWrite(ledAux, HIGH);
 }
 
 void loop() {
 
+  pisca();
 
   mpu6050.update();
 
@@ -122,18 +126,13 @@ void loop() {
   anguloY = mpu6050.getAngleY();
   anguloZ = mpu6050.getAngleZ();
 
-  cm1 = calDist * dista(triggerPin1, echoPin1);
+  DistE = calDist * distancia(triggerPinE, echoPinE);
 
-  cm2 = calDist * dista(triggerPin2, echoPin2);
-    
-  cm3 = calDist * dista(triggerPin3, echoPin3);
+  DistE = calDist * distancia(triggerPinD, echoPinD);
   
-  mediaSensor= (cm1+cm2+cm3)/3.0;
-
+  //imprimir();
   
-  imprimir();
-  
-
+/*
 if (mediaSensor >= 3 && mediaSensor <=100)
 { 
   xI = map(mediaSensor,3,100,255,0); // 255 = 5v ; 0 = 0v 
@@ -207,5 +206,6 @@ else {
   analogWrite(pulseiraE,0);
 
 }
+*/
 //delay(500);
 }
