@@ -10,6 +10,7 @@
 //#include <MPU6050_tockn.h>
 #include <Wire.h>
 #include "Ultrasonic.h" // https://www.robocore.net/tutoriais/primeiros-passos-com-sensor-ultrassonico
+//#include "Vibra.h"
 
 #define pulseiraE 7
 #define pulseiraD 8
@@ -39,10 +40,16 @@ const int MPU_B = 0x69; // Endereço do sensor do corpo (Body)
 int16_t AcXB,AcYB,AcZB,TmpB,GyXB,GyYB,GyZB; //Variaveis para pegar os valores medidos
 int16_t AcXH,AcYH,AcZH,TmpH,GyXH,GyYH,GyZH; //Variaveis para pegar os valores medidos
 
+//VIBRA motorE(pulseiraE);
+//VIBRA motorD(pulseiraD);
+
 int ledAux = 13; // ao piscar mostra que o arduino está funionando
 
 float DistE = 0;    // distnacia sensor Esquerdo
 float DistD = 0;   // distnacia sensor Direito
+
+int salvas; // numero de salvas  aserem executaddas pelo motor
+int espaco; // espaço de tempo, em ms, entre salvas
 
 int xI= 0;      // intensidade no atuadores, com base na media 
 float anguloX; // angulo em graus eixo x
@@ -103,7 +110,7 @@ void imprimir(){
   //LED = !LED;
   //digitalWrite(ledAux, LED);
  }
-
+/*
  void vibra(){
   analogWrite(pulseiraD,255);
   analogWrite(pulseiraE,255);
@@ -113,6 +120,73 @@ void imprimir(){
   delay(200);
 
  }
+*/
+
+class Vibra{
+  // Variáveis membro da classe
+    // São inicializadas no startup do programa
+    int motorPin;      // número do pino do motor
+
+    public:
+    Vibra(int pin){
+      motorPin = pin;
+      pinMode(motorPin, OUTPUT);
+    }
+
+    void vibra(int nSalvas, int espaco){ // numero de salvas e milisegundos entre salvas
+      int dt = 10;
+      for (int i = 0; i < nSalvas; i++){
+        digitalWrite(motorPin,HIGH);
+        delay(dt);
+        digitalWrite(motorPin,LOW);
+        delay(dt);
+        
+        delay(espaco);
+      }
+    }
+
+    void calcVibra(int distancia){ // sequencia de salvas em função da distância (em cm)
+      int nSalvas, espaco;
+      if (distancia >= 300 && distancia < 350 ){ // 300cm -> 3m
+        nSalvas = 1;
+        espaco = 900;
+      } else if (distancia >= 250 && distancia < 200 ){ 
+        nSalvas = 2;
+        espaco = 800;
+      } else if (distancia >= 200 && distancia < 150 ){ 
+        nSalvas = 3;
+        espaco = 700;
+      } else if (distancia >= 150 && distancia < 100 ){ 
+        nSalvas = 4;
+        espaco = 600;
+      } else if (distancia >= 100 && distancia < 50 ){ 
+        nSalvas = 5;
+        espaco = 500;
+      } else if (distancia >= 50 && distancia < 40 ){ 
+        nSalvas = 6;
+        espaco = 400;
+      } else if (distancia >= 40 && distancia < 30 ){ 
+        nSalvas = 7;
+        espaco = 300;
+      } else if (distancia >= 30 && distancia < 20 ){ 
+        nSalvas = 8;
+        espaco = 200;
+      } else if (distancia >= 20 && distancia < 10 ){ 
+        nSalvas = 9;
+        espaco = 100;
+      } else{
+        nSalvas = 10;
+        espaco = 0;
+      }
+      vibra(nSalvas, espaco);
+    }
+
+
+};
+
+Vibra motorE(pulseiraE);
+Vibra motorD(pulseiraD);
+
 
 void setup() {
   Wire.begin(); // Inicia a comunicação I2C
@@ -128,13 +202,13 @@ void setup() {
 
   Serial.begin(9600); //Inicia a comunicaçao serial (para exibir os valores lidos)
 
-  pinMode(pulseiraE,OUTPUT);
-  pinMode(pulseiraD,OUTPUT);
+  //pinMode(pulseiraE,OUTPUT);
+  //pinMode(pulseiraD,OUTPUT);
   pinMode(ledAux,OUTPUT);
 
-  vibra();
-  vibra();
-  vibra();
+  motorE.vibra(3,100); // 3 salvas com espaço de 100ms
+  motorD.vibra(3,100);
+  
   
   Wire.begin();
   //mpu6050.begin();
@@ -189,7 +263,10 @@ void loop() {
 
   DistD = sensorD.distance(); // distancia em cm
   
-  //imprimir();
+  motorE.calcVibra(DistE); // 3 salvas com espaço de 100ms
+  motorD.calcVibra(DistD);
+
+  imprimir();
   
 /*
 if (mediaSensor >= 3 && mediaSensor <=100)
