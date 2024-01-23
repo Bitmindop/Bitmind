@@ -6,27 +6,38 @@
 // Versão com Arduino Nano //
 //=========================//
 
-#include <MPU6050_tockn.h>
+// para doisacelerometros trabalahremos apenas com wire.h que gerencia o barrameto I2C
+//#include <MPU6050_tockn.h>
 #include <Wire.h>
-// necessidade de incluir uma library para o ultrasonic
+#include "Ultrasonic.h" // https://www.robocore.net/tutoriais/primeiros-passos-com-sensor-ultrassonico
 
 #define pulseiraE 7
 #define pulseiraD 8
 
 
-#define MPU6050_ADDR 0x68 // no arduino uno, ligar o pino A4(arduin) ao pino SDA do MPU e o A5(arduino) no SCL do MPU 
+//#define MPU6050_ADDR 0x68 // no arduino uno, ligar o pino A4(arduin) ao pino SDA do MPU e o A5(arduino) no SCL do MPU 
                           // o pino AD0 do MPU deve ficar ligado no GND para o endereço 0x68 
 #define DEBUG
 
 
-const float calDist = 0.01723; // calibração de distância
+//const float calDist = 0.01723; // calibração de distância
 
-MPU6050 mpu6050(Wire);
+//MPU6050 mpu6050(Wire);
 
 int triggerPinE = 2; // sensor Esquerdo
 int echoPinE = 3;  // sensor Esquerdo
 int triggerPinD = 2;  // sensor Direito
 int echoPinD = 4; // sensor Direito
+
+
+HC_SR04 sensorE(triggerPinE,echoPinE); //Configura os pinos sensor ultrassonico (Trigger,Echo)
+HC_SR04 sensorD(triggerPinD,echoPinD); //Configura os pinos sensor ultrassonico (Trigger,Echo)
+
+const int MPU_H = 0x68; // Endereço do sensor da cabeça (Head)
+const int MPU_B = 0x69; // Endereço do sensor do corpo (Body)
+
+int16_t AcXB,AcYB,AcZB,TmpB,GyXB,GyYB,GyZB; //Variaveis para pegar os valores medidos
+int16_t AcXH,AcYH,AcZH,TmpH,GyXH,GyYH,GyZH; //Variaveis para pegar os valores medidos
 
 int ledAux = 13; // ao piscar mostra que o arduino está funionando
 
@@ -48,17 +59,6 @@ void pisca(){  // tempos menores que 2s não funcionam devido ao delay causado p
   if(dT > 2*base){ Tled = millis();}
 }
 
-long distancia(int triggerPin, int echoPin){
-  pinMode(triggerPin, OUTPUT); 
-  digitalWrite(triggerPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(triggerPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(triggerPin, LOW);
-  pinMode(echoPin, INPUT);
-  return pulseIn(echoPin, HIGH);
-}
-
 void imprimir(){
    Serial.print("SENSOR Direito: ");
    Serial.print(DistD);
@@ -68,6 +68,7 @@ void imprimir(){
    Serial.print(DistE);
    Serial.println("cm");
 
+/*
   Serial.print("anguloX: ");
   Serial.print(anguloX );
   Serial.println("o");
@@ -79,7 +80,25 @@ void imprimir(){
   Serial.print("anguloZ: ");
   Serial.print(anguloZ );
   Serial.println("o");
+*/
 
+// Agora escreve os valores no monitor serial
+  // Sensor cabeça
+  Serial.print("AcXH = "); Serial.print(AcXH);
+  Serial.print(" | AcYH = "); Serial.print(AcYH);
+  Serial.print(" | AcZH = "); Serial.print(AcZH);
+  Serial.print(" | TmpH = "); Serial.print(TmpH/340.00+36.53); // Equação da temperatura em Cº de acordo com o datasheet
+  Serial.print(" | GyXH = "); Serial.print(GyXH);
+  Serial.print(" | GyYH = "); Serial.print(GyYH);
+  Serial.print(" | GyZH = "); Serial.println(GyZH);
+  // Sensor corpo
+  Serial.print("AcXB = "); Serial.print(AcXB);
+  Serial.print(" | AcYB = "); Serial.print(AcYB);
+  Serial.print(" | AcZB = "); Serial.print(AcZB);
+  Serial.print(" | TmpB = "); Serial.print(TmpB/340.00+36.53); // Equação da temperatura em Cº de acordo com o datasheet
+  Serial.print(" | GyXB = "); Serial.print(GyXB);
+  Serial.print(" | GyYB = "); Serial.print(GyYB);
+  Serial.print(" | GyZB = "); Serial.println(GyZB);
   Serial.println("---------------------------------------------");
   //LED = !LED;
   //digitalWrite(ledAux, LED);
@@ -96,8 +115,19 @@ void imprimir(){
  }
 
 void setup() {
- 
-  Serial.begin(9600);
+  Wire.begin(); // Inicia a comunicação I2C
+  Wire.beginTransmission(MPU_H); //Começa a transmissao de dados para o sensor cabeça
+  Wire.write(0x6B); // registrador PWR_MGMT_1
+  Wire.write(0); // Manda 0 e "acorda" o sensor 1
+  Wire.endTransmission(true);
+
+  Wire.beginTransmission(MPU_B); //Começa a transmissao de dados para o sensor corpo
+  Wire.write(0x6B); // registrador PWR_MGMT_1
+  Wire.write(0); // Manda 0 e "acorda" o sensor 2
+  Wire.endTransmission(true);
+
+  Serial.begin(9600); //Inicia a comunicaçao serial (para exibir os valores lidos)
+
   pinMode(pulseiraE,OUTPUT);
   pinMode(pulseiraD,OUTPUT);
   pinMode(ledAux,OUTPUT);
@@ -107,8 +137,8 @@ void setup() {
   vibra();
   
   Wire.begin();
-  mpu6050.begin();
-  mpu6050.calcGyroOffsets(true);  // colocar o giroscopio  em uma superficie plana para calibrar
+  //mpu6050.begin();
+  //mpu6050.calcGyroOffsets(true);  // colocar o giroscopio  em uma superficie plana para calibrar
 
   #ifdef DEBUG
     Serial.println("Fim Setup");
@@ -120,15 +150,44 @@ void loop() {
 
   pisca();
 
-  mpu6050.update();
+  //mpu6050.update();
 
-  anguloX = mpu6050.getAngleX();
-  anguloY = mpu6050.getAngleY();
-  anguloZ = mpu6050.getAngleZ();
+  //anguloX = mpu6050.getAngleX();
+  //anguloY = mpu6050.getAngleY();
+  //anguloZ = mpu6050.getAngleZ();
 
-  DistE = calDist * distancia(triggerPinE, echoPinE);
+// Sensor cabeça
+  Wire.beginTransmission(MPU_H); //Começa a transmissao de dados do sensor 1
+  Wire.write(0x3B); // Registrador dos dados medidos (ACCEL_XOUT_H)
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_H,14,true); // Faz um "pedido" para ler 14 registradores, que serão os registrados com os dados medidos
+  AcXH = Wire.read()<<8|Wire.read();
+  AcYH = Wire.read()<<8|Wire.read();
+  AcZH = Wire.read()<<8|Wire.read();
+  TmpH = Wire.read()<<8|Wire.read();
+  GyXH = Wire.read()<<8|Wire.read();
+  GyYH = Wire.read()<<8|Wire.read();
+  GyZH = Wire.read()<<8|Wire.read();
+  Wire.endTransmission(true); // Se der erro tente tirar esta linha
 
-  DistE = calDist * distancia(triggerPinD, echoPinD);
+  // Sensor corpo
+  Wire.beginTransmission(MPU_B); // Começa a transmissao de dados do sensor 2
+  Wire.write(0x3B); // Registrador dos dados medidos (ACCEL_XOUT_H)
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_B,14,true); // Faz um "pedido" para ler 14 registradores, que serão os registrados com os dados medidos
+  AcXB = Wire.read()<<8|Wire.read();
+  AcYB = Wire.read()<<8|Wire.read();
+  AcZB = Wire.read()<<8|Wire.read();
+  TmpB = Wire.read()<<8|Wire.read();
+  GyXB = Wire.read()<<8|Wire.read();
+  GyYB = Wire.read()<<8|Wire.read();
+  GyZB = Wire.read()<<8|Wire.read();
+  Wire.endTransmission(true); // Se der erro tente tirar esta linha
+
+
+  DistE = sensorE.distance(); // distancia em cm
+
+  DistD = sensorD.distance(); // distancia em cm
   
   //imprimir();
   
